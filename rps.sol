@@ -98,15 +98,14 @@ contract rps {
  
     /**
     * @dev registers new players.
-    * @param _choiceCode rock(0), paper(1) or scissors (3).
-    * @param _randomNumber random number used to create a unique hash 
+    * @param _hashChoice random hash generated off-chain, from a random number and choiceCode
     */
-    function register(uint256 _choiceCode, uint256 _randomNumber) public payable isBetEnough() isValidChoice(_choiceCode) {
+    function register(uint256 _hashChoice) public payable isBetEnough(){
         // if game hasn't started yet
         if (!inProgress){
             // start game
             game.player1.playerAddress = msg.sender;
-            game.player1.hashChoice = calculateHash(_choiceCode,_randomNumber);
+            game.player1.hashChoice = bytes32(_hashChoice);
            
             game.status = 1; // first player registered
             inProgress = true; // game started
@@ -116,7 +115,7 @@ contract rps {
             require(game.player1.playerAddress != msg.sender, "Second player cannot be the same as player player 1");
              
             game.player2.playerAddress = msg.sender;
-            game.player2.hashChoice = calculateHash(_choiceCode,_randomNumber);
+            game.player2.hashChoice = bytes32(_hashChoice);
             game.status = 2; // two players have registered
             game.gameDeadline = now.add(1 hours); // players have 1 hours to reveal, if not, both of their funds are burnt
         }
@@ -127,7 +126,7 @@ contract rps {
     * @param _choiceCode rock(0), paper(1) or scissors (3).
     * @param _randomNumber random number used to create a unique hash.
     */
-    function reveal (uint256 _choiceCode, uint256 _randomNumber) public {
+    function reveal (uint256 _choiceCode, uint256 _randomNumber) public isValidChoice(_choiceCode){
         // if two players have registered or reveal phase has already started
         require(game.status >= 2, "Two players must be present");
         if (msg.sender == game.player1.playerAddress) {
